@@ -53,14 +53,7 @@ func (s *server) Register(c *fiber.Ctx) error {
 		return err
 	}
 
-	query := strings.NewReader(fmt.Sprintf(`{
-    	"query": {
-        	"match_phrase": {
-				"email": "%s"
-			}
-    	}
-	}`, input.Email))
-
+	query := strings.NewReader(fmt.Sprintf(`{ "query": { "match_phrase": { "email": "%s" } } }`, input.Email))
 	response, err := s.storage.Search(s.storage.Search.WithIndex(index), s.storage.Search.WithBody(query))
 	if err != nil {
 		return err
@@ -69,15 +62,9 @@ func (s *server) Register(c *fiber.Ctx) error {
 
 	var body struct {
 		Hits struct {
-			Hits []struct {
-				Source struct {
-					Key      uuid.UUID `json:"key"`
-					Email    Email     `json:"email"`
-					Password []byte    `json:"password"`
-					Created  time.Time `json:"created"`
-					Updated  time.Time `json:"updated"`
-				} `json:"_source"`
-			} `json:"hits"`
+			Total struct {
+				Value int `json:"value"`
+			} `json:"total"`
 		} `json:"hits"`
 	}
 
@@ -85,7 +72,7 @@ func (s *server) Register(c *fiber.Ctx) error {
 		return err
 	}
 
-	if len(body.Hits.Hits) > 0 {
+	if body.Hits.Total.Value > 0 {
 		return fiber.NewError(http.StatusBadRequest, "user with this email already exists")
 	}
 
