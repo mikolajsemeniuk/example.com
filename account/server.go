@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"net/http"
+	"strings"
 	"time"
 
 	"example.com/settings"
-	"github.com/elastic/go-elasticsearch/esapi"
 	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/elastic/go-elasticsearch/v8/esapi"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
@@ -50,6 +53,42 @@ func (s *server) Register(c *fiber.Ctx) error {
 		return err
 	}
 
+	query := strings.NewReader(fmt.Sprintf(`{
+    	"query": {
+        	"match_phrase": {
+				"email": "%s"
+			}
+    	}
+	}`, input.Email))
+
+	response, err := s.storage.Search(s.storage.Search.WithIndex(index), s.storage.Search.WithBody(query))
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	var body struct {
+		Hits struct {
+			Hits []struct {
+				Source struct {
+					Key      uuid.UUID `json:"key"`
+					Email    Email     `json:"email"`
+					Password []byte    `json:"password"`
+					Created  time.Time `json:"created"`
+					Updated  time.Time `json:"updated"`
+				} `json:"_source"`
+			} `json:"hits"`
+		} `json:"hits"`
+	}
+
+	if err = json.NewDecoder(response.Body).Decode(&body); err != nil {
+		return err
+	}
+
+	if len(body.Hits.Hits) > 0 {
+		return fiber.NewError(http.StatusBadRequest, "user with this email already exists")
+	}
+
 	password, err := bcrypt.GenerateFromPassword(input.Password, 14)
 	if err != nil {
 		return err
@@ -64,23 +103,14 @@ func (s *server) Register(c *fiber.Ctx) error {
 		return err
 	}
 
-	request := esapi.IndexRequest{
-		Index:      index,
-		DocumentID: input.Key.String(),
-		Body:       bytes.NewReader(data),
-	}
-
-	response, err := request.Do(context.Background(), s.storage)
+	create := esapi.IndexRequest{Index: index, DocumentID: input.Key.String(), Body: bytes.NewReader(data)}
+	response, err = create.Do(context.Background(), s.storage)
 	if err != nil {
 		return err
 	}
 	defer response.Body.Close()
 
-	claims := jwt.MapClaims{}
-	claims["Issuer"] = input.Key.String()
-	claims["ExpiresAt"] = time.Now().Add(time.Hour).Unix()
-	claims["Roles"] = []string{}
-
+	claims := jwt.MapClaims{"Issuer": input.Key.String(), "ExpiresAt": time.Now().Add(time.Hour).Unix()}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	value, err := token.SignedString([]byte(s.configuration.Secret))
 	if err != nil {
@@ -95,7 +125,7 @@ func (s *server) Register(c *fiber.Ctx) error {
 		SameSite: "strict",
 	})
 
-	return c.SendString("token: " + value)
+	return c.SendString("user created")
 }
 
 func (s *server) LoginUser(c *fiber.Ctx) error {

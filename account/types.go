@@ -24,10 +24,11 @@ func (e *Email) UnmarshalJSON(data []byte) error {
 
 type Password []byte
 
-func (e *Password) UnmarshalJSON(data []byte) error {
+func (p *Password) UnmarshalJSON(data []byte) error {
 	password := string(data)
 	if len(password) < 5 || len(password) > 32 {
 		return errors.New("password should be between 5 and 32 characters")
 	}
+	*p = data
 	return nil
 }
