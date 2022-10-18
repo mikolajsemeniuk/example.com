@@ -105,11 +105,8 @@ func (s *server) Register(c *fiber.Ctx) error {
 	}
 
 	c.Cookie(&fiber.Cookie{
-		Name:     "token",
-		Value:    value,
-		Expires:  time.Now().Add(time.Duration(s.configuration.Expiration) * time.Hour),
-		HTTPOnly: true,
-		SameSite: "strict",
+		Name: "token", Value: value, HTTPOnly: true, SameSite: "strict",
+		Expires: time.Now().Add(time.Duration(s.configuration.Expiration) * time.Hour),
 	})
 
 	return c.SendString("user created")
