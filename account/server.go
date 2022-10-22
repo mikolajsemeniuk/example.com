@@ -36,8 +36,8 @@ func NewServer(r *fiber.App, s *elasticsearch.Client, c settings.Configuration) 
 
 func (s *server) Route(r fiber.Router) {
 	r.Post("/account/register", s.Register)
-	r.Post("/account/login", func(c *fiber.Ctx) error { return nil })
-	r.Post("/account/logout", func(c *fiber.Ctx) error { return nil })
+	r.Post("/account/login", s.Login)
+	r.Post("/account/logout", s.Logout)
 }
 
 func (s *server) Register(c *fiber.Ctx) error {
@@ -46,11 +46,10 @@ func (s *server) Register(c *fiber.Ctx) error {
 		Email    Email     `json:"email"`
 		Password Password  `json:"password"`
 		Created  time.Time `json:"created"`
-		Updated  time.Time `json:"updated"`
 	}
 
 	if err := json.Unmarshal(c.Body(), &input); err != nil {
-		return err
+		return fiber.NewError(http.StatusBadRequest, err.Error())
 	}
 
 	query := strings.NewReader(fmt.Sprintf(`{ "query": { "match_phrase": { "email": "%s" } } }`, input.Email))
@@ -60,7 +59,7 @@ func (s *server) Register(c *fiber.Ctx) error {
 	}
 	defer response.Body.Close()
 
-	var body struct {
+	var payload struct {
 		Hits struct {
 			Total struct {
 				Value int `json:"value"`
@@ -68,11 +67,11 @@ func (s *server) Register(c *fiber.Ctx) error {
 		} `json:"hits"`
 	}
 
-	if err = json.NewDecoder(response.Body).Decode(&body); err != nil {
+	if err = json.NewDecoder(response.Body).Decode(&payload); err != nil {
 		return err
 	}
 
-	if body.Hits.Total.Value > 0 {
+	if payload.Hits.Total.Value > 0 {
 		return fiber.NewError(http.StatusBadRequest, "user with this email already exists")
 	}
 
@@ -109,13 +108,69 @@ func (s *server) Register(c *fiber.Ctx) error {
 		Expires: time.Now().Add(time.Duration(s.configuration.Expiration) * time.Hour),
 	})
 
-	return c.SendString("user created")
+	return c.SendString("user registered")
 }
 
-func (s *server) LoginUser(c *fiber.Ctx) error {
-	return c.SendString("login user")
+func (s *server) Login(c *fiber.Ctx) error {
+	var input struct {
+		Email    Email    `json:"email"`
+		Password Password `json:"password"`
+	}
+
+	if err := json.Unmarshal(c.Body(), &input); err != nil {
+		return fiber.NewError(http.StatusBadRequest, err.Error())
+	}
+
+	query := strings.NewReader(fmt.Sprintf(`{ "query": { "match_phrase": { "email": "%s" } } }`, input.Email))
+	response, err := s.storage.Search(s.storage.Search.WithIndex(index), s.storage.Search.WithBody(query))
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	var payload struct {
+		Hits struct {
+			Hits []struct {
+				Source struct {
+					Key      string `json:"key"`
+					Password []byte `json:"password"`
+				} `json:"_source"`
+			} `json:"hits"`
+		} `json:"hits"`
+	}
+
+	if err = json.NewDecoder(response.Body).Decode(&payload); err != nil {
+		return err
+	}
+
+	if len(payload.Hits.Hits) == 0 {
+		return fiber.NewError(http.StatusBadRequest, "no user with this email address")
+	}
+
+	if err := bcrypt.CompareHashAndPassword(payload.Hits.Hits[0].Source.Password, []byte(input.Password)); err != nil {
+		return fiber.NewError(http.StatusBadRequest, "incorrect password")
+	}
+
+	claims := jwt.MapClaims{"Issuer": payload.Hits.Hits[0].Source.Key, "ExpiresAt": time.Now().Add(time.Hour).Unix()}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	value, err := token.SignedString([]byte(s.configuration.Secret))
+	if err != nil {
+		return err
+	}
+
+	c.Cookie(&fiber.Cookie{
+		Name: "token", Value: value, HTTPOnly: true, SameSite: "strict",
+		Expires: time.Now().Add(time.Duration(s.configuration.Expiration) * time.Hour),
+	})
+
+	return c.SendString("user logged")
 }
 
-func (s *server) LogoutUser(c *fiber.Ctx) error {
-	return c.SendString("logout user")
+func (s *server) Logout(c *fiber.Ctx) error {
+	c.Cookie(&fiber.Cookie{
+		Name: "token", Value: "", HTTPOnly: true, SameSite: "strict",
+		Expires: time.Now().Add(-time.Second),
+	})
+	return c.SendString("user logout")
 }
