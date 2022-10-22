@@ -22,9 +22,7 @@ func main() {
 
 	router := fiber.New()
 
-	account.
-		NewServer(router, storage, *configuration).
-		Route(router.Group(""))
+	account.NewServer(router, storage, *configuration).Route(router.Group(""))
 
 	if err = router.Listen(configuration.Listen); err != nil {
 		log.Fatal(err)
