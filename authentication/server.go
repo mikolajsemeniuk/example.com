@@ -1,4 +1,4 @@
-package account
+package authentication
 
 import (
 	"bytes"
@@ -34,7 +34,7 @@ func NewServer(r *fiber.App, s *elasticsearch.Client, c settings.Configuration) 
 	}
 }
 
-func (s *server) Route(r fiber.Router) {
+func (s *server) Chain(r fiber.Router) {
 	r.Post("/account/register", s.Register)
 	r.Post("/account/login", s.Login)
 	r.Get("/account/logout", s.Logout)
@@ -132,6 +132,7 @@ func (s *server) Register(c *fiber.Ctx) error {
 // @Failure 503
 // @Router /account/login [post]
 func (s *server) Login(c *fiber.Ctx) error {
+
 	var request LoginRequest
 	if err := json.Unmarshal(c.Body(), &request); err != nil {
 		return fiber.NewError(http.StatusBadRequest, err.Error())

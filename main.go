@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"example.com/account"
+	"example.com/authentication"
 	_ "example.com/docs"
 	"example.com/settings"
 	"github.com/elastic/go-elasticsearch/v8"
@@ -30,7 +30,7 @@ func main() {
 	router := fiber.New()
 	router.Get("/swagger/*", swagger.HandlerDefault)
 
-	account.NewServer(router, storage, *configuration).Route(router.Group(""))
+	authentication.NewServer(router, storage, *configuration).Chain(router.Group(""))
 
 	if err = router.Listen(configuration.Listen); err != nil {
 		log.Fatal(err)
