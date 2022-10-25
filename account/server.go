@@ -147,10 +147,7 @@ func (s *server) Login(c *fiber.Ctx) error {
 	var payload struct {
 		Hits struct {
 			Hits []struct {
-				Source struct {
-					Key      string `json:"key"`
-					Password []byte `json:"password"`
-				} `json:"_source"`
+				Source Account `json:"_source"`
 			} `json:"hits"`
 		} `json:"hits"`
 	}
