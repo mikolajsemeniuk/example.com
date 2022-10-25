@@ -9,12 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type RegisterRequest struct {
-	Email    Email    `json:"email" example:"mike@mock.com"`
-	Password Password `json:"password" example:"P@ssw0rd"`
-}
-
-type LoginRequest struct {
+type Request struct {
 	Email    Email    `json:"email" example:"mike@mock.com"`
 	Password Password `json:"password" example:"P@ssw0rd"`
 }

@@ -1,15 +1,6 @@
 basePath: /
 definitions:
-  authentication.LoginRequest:
-    properties:
-      email:
-        example: mike@mock.com
-        type: string
-      password:
-        example: P@ssw0rd
-        type: string
-    type: object
-  authentication.RegisterRequest:
+  authentication.Request:
     properties:
       email:
         example: mike@mock.com
@@ -52,7 +43,7 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/authentication.LoginRequest'
+          $ref: '#/definitions/authentication.Request'
       responses:
         "200":
           description: OK
@@ -91,7 +82,7 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/authentication.RegisterRequest'
+          $ref: '#/definitions/authentication.Request'
       responses:
         "200":
           description: OK

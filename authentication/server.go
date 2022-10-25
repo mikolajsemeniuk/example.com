@@ -46,14 +46,14 @@ func (s *server) Chain(r fiber.Router) {
 // @Description Register new user
 // @Tags account
 // @Accept application/json
-// @Param payload body RegisterRequest true "body"
+// @Param payload body Request true "body"
 // @Success 200 {object} string
 // @Success 400
 // @Failure 500
 // @Failure 503
 // @Router /account/register [post]
 func (s *server) Register(c *fiber.Ctx) error {
-	var request RegisterRequest
+	var request Request
 	if err := json.Unmarshal(c.Body(), &request); err != nil {
 		return fiber.NewError(http.StatusBadRequest, err.Error())
 	}
@@ -125,15 +125,14 @@ func (s *server) Register(c *fiber.Ctx) error {
 // @Description Login existing user
 // @Tags account
 // @Accept application/json
-// @Param payload body LoginRequest true "body"
+// @Param payload body Request true "body"
 // @Success 200 {object} string
 // @Success 400
 // @Failure 500
 // @Failure 503
 // @Router /account/login [post]
 func (s *server) Login(c *fiber.Ctx) error {
-
-	var request LoginRequest
+	var request Request
 	if err := json.Unmarshal(c.Body(), &request); err != nil {
 		return fiber.NewError(http.StatusBadRequest, err.Error())
 	}
