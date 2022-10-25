@@ -4,7 +4,27 @@ import (
 	"encoding/json"
 	"errors"
 	"net/mail"
+	"time"
+
+	"github.com/google/uuid"
 )
+
+type RegisterRequest struct {
+	Email    Email    `json:"email" example:"mike@mock.com"`
+	Password Password `json:"password" example:"P@ssw0rd"`
+}
+
+type LoginRequest struct {
+	Email    Email    `json:"email" example:"mike@mock.com"`
+	Password Password `json:"password" example:"P@ssw0rd"`
+}
+
+type Account struct {
+	Key      uuid.UUID `json:"key"`
+	Email    string    `json:"email"`
+	Password []byte    `json:"password"`
+	Created  time.Time `json:"created"`
+}
 
 type Email string
 
@@ -22,13 +42,17 @@ func (e *Email) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type Password []byte
+func (e *Email) String() string {
+	return string(*e)
+}
+
+type Password string
 
 func (p *Password) UnmarshalJSON(data []byte) error {
 	password := string(data)
 	if len(password) < 5 || len(password) > 32 {
 		return errors.New("password should be between 5 and 32 characters")
 	}
-	*p = data
+	*p = Password(password)
 	return nil
 }

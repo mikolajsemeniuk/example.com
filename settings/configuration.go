@@ -8,6 +8,7 @@ import (
 type Configuration struct {
 	Listen     string `envconfig:"LISTEN" default:":3000"`
 	Secret     string `envconfig:"SECRET" default:"yfasdhudashnjdas"`
+	Cookie     string `envconfig:"COOKIE" default:"cookie"`
 	Expiration int    `envconfig:"EXPIRATION" default:"2"`
 }
 

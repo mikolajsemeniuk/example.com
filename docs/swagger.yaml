@@ -1,0 +1,112 @@
+basePath: /
+definitions:
+  account.LoginRequest:
+    properties:
+      email:
+        example: mike@mock.com
+        type: string
+      password:
+        example: P@ssw0rd
+        type: string
+    type: object
+  account.RegisterRequest:
+    properties:
+      email:
+        example: mike@mock.com
+        type: string
+      password:
+        example: P@ssw0rd
+        type: string
+    type: object
+info:
+  contact: {}
+  description: some API
+  title: API
+  version: "1.0"
+paths:
+  /account/authorize:
+    get:
+      consumes:
+      - application/json
+      description: Authorize existing user
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+      summary: Authorize
+      tags:
+      - account
+  /account/login:
+    post:
+      consumes:
+      - application/json
+      description: Login existing user
+      parameters:
+      - description: body
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/account.LoginRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+        "503":
+          description: Service Unavailable
+      summary: Login
+      tags:
+      - account
+  /account/logout:
+    get:
+      consumes:
+      - application/json
+      description: Logout existing user
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Logout
+      tags:
+      - account
+  /account/register:
+    post:
+      consumes:
+      - application/json
+      description: Register new user
+      parameters:
+      - description: body
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/account.RegisterRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+        "503":
+          description: Service Unavailable
+      summary: Register
+      tags:
+      - account
+schemes:
+- http
+- https
+swagger: "2.0"
