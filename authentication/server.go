@@ -87,7 +87,7 @@ func (s *server) Register(c *fiber.Ctx) error {
 	}
 
 	account := Account{
-		Key:      uuid.New(),
+		Key:      uuid.New().String(),
 		Email:    request.Email.String(),
 		Password: password,
 		Created:  time.Now(),
@@ -98,14 +98,14 @@ func (s *server) Register(c *fiber.Ctx) error {
 		return err
 	}
 
-	create := esapi.IndexRequest{Index: index, DocumentID: account.Key.String(), Body: bytes.NewReader(data)}
+	create := esapi.IndexRequest{Index: index, DocumentID: account.Key, Body: bytes.NewReader(data)}
 	response, err = create.Do(context.Background(), s.storage)
 	if err != nil {
 		return fiber.NewError(http.StatusServiceUnavailable, err.Error())
 	}
 	defer response.Body.Close()
 
-	claims := jwt.MapClaims{"Issuer": account.Key.String(), "ExpiresAt": time.Now().Add(time.Hour).Unix()}
+	claims := jwt.MapClaims{"Issuer": account.Key, "ExpiresAt": time.Now().Add(time.Hour).Unix()}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	value, err := token.SignedString([]byte(s.configuration.Secret))
 	if err != nil {

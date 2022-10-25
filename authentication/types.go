@@ -5,8 +5,6 @@ import (
 	"errors"
 	"net/mail"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type Request struct {
@@ -15,7 +13,7 @@ type Request struct {
 }
 
 type Account struct {
-	Key      uuid.UUID `json:"key"`
+	Key      string    `json:"key"`
 	Email    string    `json:"email"`
 	Password []byte    `json:"password"`
 	Created  time.Time `json:"created"`
