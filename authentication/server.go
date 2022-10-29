@@ -21,14 +21,12 @@ import (
 const index = "accounts"
 
 type server struct {
-	router        *fiber.App
 	storage       *elasticsearch.Client
 	configuration settings.Configuration
 }
 
-func NewServer(r *fiber.App, s *elasticsearch.Client, c settings.Configuration) *server {
+func NewServer(s *elasticsearch.Client, c settings.Configuration) *server {
 	return &server{
-		router:        r,
 		storage:       s,
 		configuration: c,
 	}

@@ -30,7 +30,7 @@ func main() {
 	router := fiber.New()
 	router.Get("/swagger/*", swagger.HandlerDefault)
 
-	authentication.NewServer(router, storage, *configuration).Chain(router.Group(""))
+	authentication.NewServer(storage, *configuration).Chain(router.Group(""))
 
 	if err = router.Listen(configuration.Listen); err != nil {
 		log.Fatal(err)
