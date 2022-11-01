@@ -59,7 +59,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/authentication.Request"
+                            "$ref": "#/definitions/account.Request"
                         }
                     }
                 ],
@@ -119,7 +119,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/authentication.Request"
+                            "$ref": "#/definitions/account.RegisterRequest"
                         }
                     }
                 ],
@@ -144,7 +144,24 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "authentication.Request": {
+        "account.RegisterRequest": {
+            "type": "object",
+            "properties": {
+                "company": {
+                    "type": "string",
+                    "example": "ey"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "mike@mock.com"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "P@ssw0rd"
+                }
+            }
+        },
+        "account.Request": {
             "type": "object",
             "properties": {
                 "email": {

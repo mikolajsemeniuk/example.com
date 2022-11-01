@@ -1,4 +1,4 @@
-package authentication
+package account
 
 import (
 	"encoding/json"
@@ -6,6 +6,12 @@ import (
 	"net/mail"
 	"time"
 )
+
+type RegisterRequest struct {
+	Email    Email    `json:"email" example:"mike@mock.com"`
+	Password Password `json:"password" example:"P@ssw0rd"`
+	Company  Company  `json:"company" example:"ey"`
+}
 
 type Request struct {
 	Email    Email    `json:"email" example:"mike@mock.com"`
@@ -42,10 +48,31 @@ func (e *Email) String() string {
 type Password string
 
 func (p *Password) UnmarshalJSON(data []byte) error {
-	password := string(data)
+	var password string
+	if err := json.Unmarshal(data, &password); err != nil {
+		return err
+	}
+
 	if len(password) < 5 || len(password) > 32 {
 		return errors.New("password should be between 5 and 32 characters")
 	}
+
 	*p = Password(password)
+	return nil
+}
+
+type Company string
+
+func (c *Company) UnmarshalJSON(data []byte) error {
+	var company string
+	if err := json.Unmarshal(data, &company); err != nil {
+		return err
+	}
+
+	if len(company) < 5 || len(company) > 32 {
+		return errors.New("company should be between 5 and 32 characters")
+	}
+
+	*c = Company(company)
 	return nil
 }
