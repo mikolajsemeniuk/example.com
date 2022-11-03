@@ -1,4 +1,4 @@
-package account
+package management
 
 import (
 	"bytes"
@@ -54,8 +54,8 @@ func (s *server) Register(c *fiber.Ctx) error {
 		return fiber.NewError(http.StatusBadRequest, err.Error())
 	}
 
-	query := strings.NewReader(fmt.Sprintf(`{ "query": { "match_phrase": { "email": "%s" } } }`, request.Email))
-	response, err := s.storage.Search(s.storage.Search.WithIndex("accounts"), s.storage.Search.WithBody(query))
+	query := strings.NewReader(fmt.Sprintf(`{ "query": { "match_phrase": { "accounts.email": "%s" } } }`, request.Email))
+	response, err := s.storage.Search(s.storage.Search.WithIndex(s.configuration.Index), s.storage.Search.WithBody(query))
 	if err != nil {
 		return fiber.NewError(http.StatusServiceUnavailable, err.Error())
 	}
@@ -63,9 +63,9 @@ func (s *server) Register(c *fiber.Ctx) error {
 
 	var payload struct {
 		Hits struct {
-			Total struct {
-				Value int `json:"value"`
-			} `json:"total"`
+			Hits []struct {
+				Source Organization `json:"_source"`
+			} `json:"hits"`
 		} `json:"hits"`
 	}
 
@@ -73,12 +73,12 @@ func (s *server) Register(c *fiber.Ctx) error {
 		return err
 	}
 
-	if payload.Hits.Total.Value > 0 {
+	if len(payload.Hits.Hits) > 0 {
 		return fiber.NewError(http.StatusBadRequest, "user with this email already exists")
 	}
 
 	query = strings.NewReader(fmt.Sprintf(`{ "query": { "match_phrase": { "name": "%s" } } }`, request.Company))
-	response, err = s.storage.Search(s.storage.Search.WithIndex("organizations"), s.storage.Search.WithBody(query))
+	response, err = s.storage.Search(s.storage.Search.WithIndex(s.configuration.Index), s.storage.Search.WithBody(query))
 	if err != nil {
 		return fiber.NewError(http.StatusServiceUnavailable, err.Error())
 	}
@@ -86,10 +86,6 @@ func (s *server) Register(c *fiber.Ctx) error {
 
 	if err = json.NewDecoder(response.Body).Decode(&payload); err != nil {
 		return err
-	}
-
-	if payload.Hits.Total.Value == 0 {
-		//
 	}
 
 	password, err := bcrypt.GenerateFromPassword([]byte(request.Password), 14)
@@ -98,25 +94,37 @@ func (s *server) Register(c *fiber.Ctx) error {
 	}
 
 	account := Account{
-		Key:      uuid.New().String(),
+		Key:      uuid.New(),
 		Email:    request.Email.String(),
 		Password: password,
 		Created:  time.Now(),
 	}
 
-	data, err := json.Marshal(account)
+	organization := Organization{
+		Key:      uuid.New(),
+		Name:     string(request.Company),
+		Accounts: []Account{account},
+		Created:  time.Now(),
+	}
+
+	if len(payload.Hits.Hits) > 0 {
+		organization = payload.Hits.Hits[0].Source
+		organization.Accounts = append(organization.Accounts, account)
+	}
+
+	data, err := json.Marshal(organization)
 	if err != nil {
 		return err
 	}
 
-	create := esapi.IndexRequest{Index: "accounts", DocumentID: account.Key, Body: bytes.NewReader(data)}
+	create := esapi.IndexRequest{Index: s.configuration.Index, DocumentID: organization.Key.String(), Body: bytes.NewReader(data)}
 	response, err = create.Do(context.Background(), s.storage)
 	if err != nil {
 		return fiber.NewError(http.StatusServiceUnavailable, err.Error())
 	}
 	defer response.Body.Close()
 
-	claims := jwt.MapClaims{"Issuer": account.Key, "ExpiresAt": time.Now().Add(time.Hour).Unix()}
+	claims := jwt.MapClaims{"Issuer": organization.Key, "ExpiresAt": time.Now().Add(time.Hour).Unix()}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	value, err := token.SignedString([]byte(s.configuration.Secret))
 	if err != nil {
@@ -149,7 +157,7 @@ func (s *server) Login(c *fiber.Ctx) error {
 	}
 
 	query := strings.NewReader(fmt.Sprintf(`{ "query": { "match_phrase": { "email": "%s" } } }`, request.Email))
-	response, err := s.storage.Search(s.storage.Search.WithIndex("accounts"), s.storage.Search.WithBody(query))
+	response, err := s.storage.Search(s.storage.Search.WithIndex(s.configuration.Index), s.storage.Search.WithBody(query))
 	if err != nil {
 		return err
 	}

@@ -1,10 +1,12 @@
-package account
+package management
 
 import (
 	"encoding/json"
 	"errors"
 	"net/mail"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type RegisterRequest struct {
@@ -18,8 +20,15 @@ type Request struct {
 	Password Password `json:"password" example:"P@ssw0rd"`
 }
 
+type Organization struct {
+	Key      uuid.UUID `json:"key"`
+	Name     string    `json:"name"`
+	Accounts []Account `json:"accounts"`
+	Created  time.Time `json:"created"`
+}
+
 type Account struct {
-	Key      string    `json:"key"`
+	Key      uuid.UUID `json:"key"`
 	Email    string    `json:"email"`
 	Password []byte    `json:"password"`
 	Created  time.Time `json:"created"`
@@ -69,8 +78,8 @@ func (c *Company) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	if len(company) < 5 || len(company) > 32 {
-		return errors.New("company should be between 5 and 32 characters")
+	if len(company) < 2 || len(company) > 32 {
+		return errors.New("company should be between 2 and 32 characters")
 	}
 
 	*c = Company(company)

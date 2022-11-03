@@ -59,7 +59,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/account.Request"
+                            "$ref": "#/definitions/management.Request"
                         }
                     }
                 ],
@@ -119,7 +119,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/account.RegisterRequest"
+                            "$ref": "#/definitions/management.RegisterRequest"
                         }
                     }
                 ],
@@ -144,7 +144,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "account.RegisterRequest": {
+        "management.RegisterRequest": {
             "type": "object",
             "properties": {
                 "company": {
@@ -161,7 +161,7 @@ const docTemplate = `{
                 }
             }
         },
-        "account.Request": {
+        "management.Request": {
             "type": "object",
             "properties": {
                 "email": {

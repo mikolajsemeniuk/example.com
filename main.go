@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"example.com/account"
 	_ "example.com/docs"
+	"example.com/management"
 	"example.com/settings"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/gofiber/fiber/v2"
@@ -29,11 +29,11 @@ func main() {
 
 	router := fiber.New()
 	router.Get("/swagger/*", swagger.HandlerDefault)
+	management.NewServer(storage, *configuration).Chain(router.Group(""))
+
 	router.Use(func(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).Redirect("/swagger/index.html")
 	})
-
-	account.NewServer(storage, *configuration).Chain(router.Group(""))
 
 	if err = router.Listen(configuration.Listen); err != nil {
 		log.Fatal(err)
