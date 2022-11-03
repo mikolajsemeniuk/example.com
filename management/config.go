@@ -6,7 +6,7 @@ import (
 )
 
 type Config struct {
-	Listen     string `envconfig:"LISTEN" default:":3000"`
+	Listen     string `envconfig:"LISTEN" default:":5000"`
 	Secret     string `envconfig:"SECRET" default:"yfasdhudashnjdas"`
 	Index      string `envconfig:"INDEX" default:"organizations"`
 	Cookie     string `envconfig:"COOKIE" default:"cookie"`

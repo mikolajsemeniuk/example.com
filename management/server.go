@@ -155,7 +155,7 @@ func (s *server) Login(c *fiber.Ctx) error {
 		return fiber.NewError(http.StatusBadRequest, err.Error())
 	}
 
-	query := strings.NewReader(fmt.Sprintf(`{ "query": { "match_phrase": { "email": "%s" } } }`, request.Email))
+	query := strings.NewReader(fmt.Sprintf(`{ "query": { "match_phrase": { "accounts.email": "%s" } } }`, request.Email))
 	response, err := s.storage.Search(s.storage.Search.WithIndex(s.configuration.Index), s.storage.Search.WithBody(query))
 	if err != nil {
 		return err
@@ -165,7 +165,7 @@ func (s *server) Login(c *fiber.Ctx) error {
 	var payload struct {
 		Hits struct {
 			Hits []struct {
-				Source Account `json:"_source"`
+				Source Organization `json:"_source"`
 			} `json:"hits"`
 		} `json:"hits"`
 	}
@@ -178,7 +178,7 @@ func (s *server) Login(c *fiber.Ctx) error {
 		return fiber.NewError(http.StatusBadRequest, "no user with this email address")
 	}
 
-	if err := bcrypt.CompareHashAndPassword(payload.Hits.Hits[0].Source.Password, []byte(request.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword(payload.Hits.Hits[0].Source.Accounts[0].Password, []byte(request.Password)); err != nil {
 		return fiber.NewError(http.StatusBadRequest, "incorrect password")
 	}
 
