@@ -1,4 +1,4 @@
-package management
+package main
 
 import (
 	"bytes"
@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"example.com/settings"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
 	"github.com/gofiber/fiber/v2"
@@ -20,10 +19,10 @@ import (
 
 type server struct {
 	storage       *elasticsearch.Client
-	configuration settings.Configuration
+	configuration Configuration
 }
 
-func NewServer(s *elasticsearch.Client, c settings.Configuration) *server {
+func NewServer(s *elasticsearch.Client, c Configuration) *server {
 	return &server{
 		storage:       s,
 		configuration: c,

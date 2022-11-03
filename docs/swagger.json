@@ -55,7 +55,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/management.Request"
+                            "$ref": "#/definitions/main.Request"
                         }
                     }
                 ],
@@ -115,7 +115,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/management.RegisterRequest"
+                            "$ref": "#/definitions/main.RegisterRequest"
                         }
                     }
                 ],
@@ -140,7 +140,7 @@
         }
     },
     "definitions": {
-        "management.RegisterRequest": {
+        "main.RegisterRequest": {
             "type": "object",
             "properties": {
                 "company": {
@@ -157,7 +157,7 @@
                 }
             }
         },
-        "management.Request": {
+        "main.Request": {
             "type": "object",
             "properties": {
                 "email": {

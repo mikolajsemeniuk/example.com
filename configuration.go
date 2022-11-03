@@ -1,4 +1,4 @@
-package settings
+package main
 
 import (
 	_ "github.com/joho/godotenv/autoload"
@@ -13,12 +13,12 @@ type Configuration struct {
 	Expiration int    `envconfig:"EXPIRATION" default:"2"`
 }
 
-func NewConfiguration() (*Configuration, error) {
+func MakeConfiguration() (Configuration, error) {
 	var configuration Configuration
 
 	if err := envconfig.Process("", &configuration); err != nil {
-		return nil, err
+		return configuration, err
 	}
 
-	return &configuration, nil
+	return configuration, nil
 }
