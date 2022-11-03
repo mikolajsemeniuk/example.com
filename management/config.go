@@ -13,12 +13,12 @@ type Config struct {
 	Expiration int    `envconfig:"EXPIRATION" default:"2"`
 }
 
-func MakeConfiguration() (Config, error) {
-	var configuration Config
+func MakeConfig() (Config, error) {
+	var config Config
 
-	if err := envconfig.Process("", &configuration); err != nil {
-		return configuration, err
+	if err := envconfig.Process("", &config); err != nil {
+		return config, err
 	}
 
-	return configuration, nil
+	return config, nil
 }

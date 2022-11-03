@@ -17,7 +17,7 @@ import (
 // @BasePath /
 // @schemes http https
 func main() {
-	configuration, err := management.MakeConfiguration()
+	configuration, err := management.MakeConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
