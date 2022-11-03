@@ -7,6 +7,7 @@ import (
 	"example.com/management"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/swagger"
 )
 
@@ -27,6 +28,7 @@ func main() {
 	}
 
 	router := fiber.New()
+	router.Use(cors.New())
 	router.Get("/swagger/*", swagger.HandlerDefault)
 	management.NewServer(storage, configuration).Chain(router.Group(""))
 	router.Use(func(c *fiber.Ctx) error { return c.Status(fiber.StatusNotFound).Redirect("/swagger/index.html") })
