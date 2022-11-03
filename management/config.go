@@ -1,11 +1,11 @@
-package main
+package management
 
 import (
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/kelseyhightower/envconfig"
 )
 
-type Configuration struct {
+type Config struct {
 	Listen     string `envconfig:"LISTEN" default:":3000"`
 	Secret     string `envconfig:"SECRET" default:"yfasdhudashnjdas"`
 	Index      string `envconfig:"INDEX" default:"organizations"`
@@ -13,8 +13,8 @@ type Configuration struct {
 	Expiration int    `envconfig:"EXPIRATION" default:"2"`
 }
 
-func MakeConfiguration() (Configuration, error) {
-	var configuration Configuration
+func MakeConfiguration() (Config, error) {
+	var configuration Config
 
 	if err := envconfig.Process("", &configuration); err != nil {
 		return configuration, err

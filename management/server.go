@@ -1,4 +1,4 @@
-package main
+package management
 
 import (
 	"bytes"
@@ -19,10 +19,10 @@ import (
 
 type server struct {
 	storage       *elasticsearch.Client
-	configuration Configuration
+	configuration Config
 }
 
-func NewServer(s *elasticsearch.Client, c Configuration) *server {
+func NewServer(s *elasticsearch.Client, c Config) *server {
 	return &server{
 		storage:       s,
 		configuration: c,

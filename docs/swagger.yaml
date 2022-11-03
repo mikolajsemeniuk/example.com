@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  main.RegisterRequest:
+  management.RegisterRequest:
     properties:
       company:
         example: ey
@@ -12,7 +12,7 @@ definitions:
         example: P@ssw0rd
         type: string
     type: object
-  main.Request:
+  management.Request:
     properties:
       email:
         example: mike@mock.com
@@ -55,7 +55,7 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/main.Request'
+          $ref: '#/definitions/management.Request'
       responses:
         "200":
           description: OK
@@ -94,7 +94,7 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/main.RegisterRequest'
+          $ref: '#/definitions/management.RegisterRequest'
       responses:
         "200":
           description: OK
