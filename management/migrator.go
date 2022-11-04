@@ -1,33 +1,22 @@
 package management
 
-// {
-//     "key": "1",
-//     "name": "ey",
-//     "accounts": [
-//         {
-//             "key": "1",
-//             "name": "mike mock"
-//         }
-//     ],
-//     "campaigns": [
-//         {
-//             "key": "1",
-//             "name": "senior dev",
-//             "applications": [
-//                 {
-//                     "key": "1",
-//                     "name": "mike mock"
-//                 },
-//                 {
-//                     "key": "2",
-//                     "name": "john doe"
-//                 }
-//             ]
-//         },
-//         {
-//             "key": "2",
-//             "name": "recruiter",
-//             "applications": []
-//         }
-//     ]
-// }
+import (
+	"github.com/elastic/go-elasticsearch/v8"
+)
+
+func Migrate(s *elasticsearch.Client, c Config) error {
+	response, err := s.Indices.Exists([]string{c.Index})
+	if err != nil {
+		return err
+	}
+
+	if response.StatusCode == 200 {
+		return nil
+	}
+
+	if _, err = s.Indices.Create(c.Index); err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -17,7 +17,7 @@ import (
 // @BasePath /
 // @schemes http https
 func main() {
-	configuration, err := management.MakeConfig()
+	config, err := management.NewConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -27,6 +27,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	management.Migrate(storage, *config)
+
 	router := fiber.New()
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     "*",
@@ -35,10 +37,10 @@ func main() {
 		AllowMethods:     "GET, POST, HEAD, PUT, DELETE, PATCH, OPTIONS",
 	}))
 	router.Get("/swagger/*", swagger.HandlerDefault)
-	management.NewServer(storage, configuration).Chain(router.Group(""))
+	management.NewServer(storage, *config).Chain(router.Group(""))
 	router.Use(func(c *fiber.Ctx) error { return c.Status(fiber.StatusNotFound).Redirect("/swagger/index.html") })
 
-	if err = router.Listen(configuration.Listen); err != nil {
+	if err = router.Listen(config.Listen); err != nil {
 		log.Fatal(err)
 	}
 }
