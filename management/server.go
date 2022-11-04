@@ -131,8 +131,11 @@ func (s *server) Register(c *fiber.Ctx) error {
 	}
 
 	c.Cookie(&fiber.Cookie{
-		Name: s.configuration.Cookie, Value: value, HTTPOnly: true, SameSite: "strict",
-		Expires: time.Now().Add(time.Duration(s.configuration.Expiration) * time.Hour),
+		Name: s.configuration.Cookie, Value: value,
+		Secure:   true,
+		HTTPOnly: false,
+		SameSite: "none",
+		Expires:  time.Now().Add(time.Duration(s.configuration.Expiration) * time.Hour),
 	})
 
 	return c.SendString("user registered")
@@ -190,8 +193,11 @@ func (s *server) Login(c *fiber.Ctx) error {
 	}
 
 	c.Cookie(&fiber.Cookie{
-		Name: s.configuration.Cookie, Value: value, HTTPOnly: true, SameSite: "strict",
-		Expires: time.Now().Add(time.Duration(s.configuration.Expiration) * time.Hour),
+		Name: s.configuration.Cookie, Value: value,
+		Secure:   true,
+		HTTPOnly: false,
+		SameSite: "none",
+		Expires:  time.Now().Add(time.Duration(s.configuration.Expiration) * time.Hour),
 	})
 
 	return c.SendString("user logged")
@@ -206,8 +212,12 @@ func (s *server) Login(c *fiber.Ctx) error {
 // @Router /account/logout [get]
 func (s *server) Logout(c *fiber.Ctx) error {
 	c.Cookie(&fiber.Cookie{
-		Name: s.configuration.Cookie, Value: "", HTTPOnly: true, SameSite: "strict",
-		Expires: time.Now().Add(-time.Second),
+		Name:     s.configuration.Cookie,
+		Value:    "",
+		Secure:   true,
+		HTTPOnly: false,
+		SameSite: "none",
+		Expires:  time.Now().Add(-time.Second),
 	})
 	return c.SendString("user logout")
 }
