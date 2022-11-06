@@ -27,7 +27,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	management.Migrate(storage, *config)
+	management.Migrate(storage, config)
 
 	router := fiber.New()
 	router.Use(cors.New(cors.Config{
@@ -37,7 +37,7 @@ func main() {
 		AllowMethods:     "GET, POST, HEAD, PUT, DELETE, PATCH, OPTIONS",
 	}))
 	router.Get("/swagger/*", swagger.HandlerDefault)
-	management.NewServer(storage, *config).Chain(router.Group(""))
+	management.NewServer(storage, config).Chain(router.Group(""))
 	router.Use(func(c *fiber.Ctx) error { return c.Status(fiber.StatusNotFound).Redirect("/swagger/index.html") })
 
 	if err = router.Listen(config.Listen); err != nil {

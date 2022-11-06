@@ -30,10 +30,15 @@ func NewServer(s *elasticsearch.Client, c Config) *server {
 }
 
 func (s *server) Chain(r fiber.Router) {
+	// authentication
 	r.Post("/account/register", s.Register)
 	r.Post("/account/login", s.Login)
 	r.Get("/account/logout", s.Logout)
 	r.Get("/account/authorize", s.Authorize)
+
+	// campaigns
+	r.Get("/campaigns", s.ListCampaigns)
+	r.Post("/campaign/create", s.CreateCampaign)
 }
 
 // @Summary Register
@@ -100,10 +105,11 @@ func (s *server) Register(c *fiber.Ctx) error {
 	}
 
 	organization := Organization{
-		Key:      uuid.New(),
-		Name:     string(request.Company),
-		Accounts: []Account{account},
-		Created:  time.Now(),
+		Key:       uuid.New(),
+		Name:      string(request.Company),
+		Accounts:  []Account{account},
+		Campaigns: []Campaign{},
+		Created:   time.Now(),
 	}
 
 	if len(payload.Hits.Hits) > 0 {
@@ -123,7 +129,11 @@ func (s *server) Register(c *fiber.Ctx) error {
 	}
 	defer response.Body.Close()
 
-	claims := jwt.MapClaims{"Issuer": organization.Key, "ExpiresAt": time.Now().Add(time.Hour).Unix()}
+	claims := jwt.MapClaims{
+		"Issuer":    organization.Key,
+		"Company":   organization.Name,
+		"ExpiresAt": time.Now().Add(time.Hour).Unix(),
+	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	value, err := token.SignedString([]byte(s.configuration.Secret))
 	if err != nil {
@@ -185,7 +195,11 @@ func (s *server) Login(c *fiber.Ctx) error {
 		return fiber.NewError(http.StatusBadRequest, "incorrect password")
 	}
 
-	claims := jwt.MapClaims{"Issuer": payload.Hits.Hits[0].Source.Key, "ExpiresAt": time.Now().Add(time.Hour).Unix()}
+	claims := jwt.MapClaims{
+		"Issuer":    payload.Hits.Hits[0].Source.Key,
+		"Company":   payload.Hits.Hits[0].Source.Name,
+		"ExpiresAt": time.Now().Add(time.Hour).Unix(),
+	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	value, err := token.SignedString([]byte(s.configuration.Secret))
 	if err != nil {
@@ -232,8 +246,9 @@ func (s *server) Logout(c *fiber.Ctx) error {
 // @Router /account/authorize [get]
 func (s *server) Authorize(c *fiber.Ctx) error {
 	cookie := c.Cookies(s.configuration.Cookie)
+	parser := func(token *jwt.Token) (interface{}, error) { return []byte(s.configuration.Secret), nil }
 
-	token, err := jwt.Parse(cookie, func(token *jwt.Token) (interface{}, error) { return []byte(s.configuration.Secret), nil })
+	token, err := jwt.Parse(cookie, parser)
 	if err != nil {
 		return fiber.NewError(http.StatusUnauthorized, "unauthorized")
 	}
@@ -243,4 +258,128 @@ func (s *server) Authorize(c *fiber.Ctx) error {
 	id := payload["Issuer"].(string)
 
 	return c.SendString("user with id: " + id)
+}
+
+// Campaigns
+// TODO: move it later
+
+// @Summary ListCampaigns
+// @Schemes
+// @Description ListCampaigns
+// @Tags campaigns
+// @Accept application/json
+// @Success 200 {object} string
+// @Router /campaigns [get]
+func (s *server) ListCampaigns(c *fiber.Ctx) error {
+	// TODO: refactor later
+	cookie := c.Cookies(s.configuration.Cookie)
+	parser := func(token *jwt.Token) (interface{}, error) { return []byte(s.configuration.Secret), nil }
+
+	token, err := jwt.Parse(cookie, parser)
+	if err != nil {
+		return fiber.NewError(http.StatusUnauthorized, "unauthorized")
+	}
+
+	claims := token.Claims.(jwt.MapClaims)
+	company := claims["Company"].(string)
+
+	query := strings.NewReader(fmt.Sprintf(`{ "_source": { "include": [ "campaigns" ] }, "query": { "match_phrase": { "name": "%s" } } }`, company))
+	response, err := s.storage.Search(s.storage.Search.WithIndex(s.configuration.Index), s.storage.Search.WithBody(query))
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	var payload struct {
+		Hits struct {
+			Hits []struct {
+				Source struct {
+					Campaigns []Campaign `json:"campaigns"`
+				} `json:"_source"`
+			} `json:"hits"`
+		} `json:"hits"`
+	}
+
+	if err = json.NewDecoder(response.Body).Decode(&payload); err != nil {
+		return err
+	}
+
+	output, err := json.Marshal(payload.Hits.Hits[0].Source.Campaigns)
+	if err != nil {
+		return err
+	}
+
+	return c.Send(output)
+}
+
+// @Summary CreateCampaign
+// @Schemes
+// @Description CreateCampaign
+// @Tags campaigns
+// @Accept application/json
+// @Param payload body CreateCampaignRequest true "body"
+// @Success 200 {object} string
+// @Router /campaign/create [post]
+func (s *server) CreateCampaign(c *fiber.Ctx) error {
+	var request CreateCampaignRequest
+	if err := json.Unmarshal(c.Body(), &request); err != nil {
+		return err
+	}
+
+	// TODO: refactor later
+	cookie := c.Cookies(s.configuration.Cookie)
+	parser := func(token *jwt.Token) (interface{}, error) { return []byte(s.configuration.Secret), nil }
+
+	token, err := jwt.Parse(cookie, parser)
+	if err != nil {
+		return fiber.NewError(http.StatusUnauthorized, "unauthorized")
+	}
+
+	claims := token.Claims.(jwt.MapClaims)
+	company := claims["Company"].(string)
+
+	query := strings.NewReader(fmt.Sprintf(`{ "query": { "match_phrase": { "name": "%s" } } }`, company))
+	response, err := s.storage.Search(s.storage.Search.WithIndex(s.configuration.Index), s.storage.Search.WithBody(query))
+	if err != nil {
+		return fiber.NewError(http.StatusServiceUnavailable, err.Error())
+	}
+	defer response.Body.Close()
+
+	var payload struct {
+		Hits struct {
+			Hits []struct {
+				Source Organization `json:"_source"`
+			} `json:"hits"`
+		} `json:"hits"`
+	}
+
+	if err = json.NewDecoder(response.Body).Decode(&payload); err != nil {
+		return err
+	}
+
+	organization := payload.Hits.Hits[0].Source
+	organization.Campaigns = append(organization.Campaigns, Campaign{
+		Key:     uuid.New(),
+		Name:    request.Name,
+		Created: time.Now(),
+	})
+
+	data, err := json.Marshal(organization)
+	if err != nil {
+		return err
+	}
+
+	create := esapi.IndexRequest{
+		Index:      s.configuration.Index,
+		DocumentID: payload.Hits.Hits[0].Source.Key.String(),
+		Body:       bytes.NewReader(data),
+	}
+
+	response, err = create.Do(context.Background(), s.storage)
+	if err != nil {
+		return fiber.NewError(http.StatusServiceUnavailable, err.Error())
+	}
+	defer response.Body.Close()
+
+	return c.SendString("campaign created")
 }

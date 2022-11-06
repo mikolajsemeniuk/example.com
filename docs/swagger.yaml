@@ -1,5 +1,50 @@
 basePath: /
 definitions:
+  management.CreateCampaignRequest:
+    properties:
+      accept:
+        type: number
+      active:
+        type: boolean
+      certificates:
+        items:
+          type: string
+        type: array
+      courses:
+        items:
+          type: string
+        type: array
+      created:
+        type: string
+      education:
+        items:
+          type: string
+        type: array
+      experience:
+        items:
+          type: string
+        type: array
+      finish:
+        type: string
+      key:
+        type: string
+      languages:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      reject:
+        type: number
+      skills:
+        items:
+          type: string
+        type: array
+      start:
+        type: string
+      wanted:
+        type: integer
+    type: object
   management.RegisterRequest:
     properties:
       company:
@@ -109,6 +154,39 @@ paths:
       summary: Register
       tags:
       - account
+  /campaign/create:
+    post:
+      consumes:
+      - application/json
+      description: CreateCampaign
+      parameters:
+      - description: body
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/management.CreateCampaignRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: CreateCampaign
+      tags:
+      - campaigns
+  /campaigns:
+    get:
+      consumes:
+      - application/json
+      description: ListCampaigns
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: ListCampaigns
+      tags:
+      - campaigns
 schemes:
 - http
 - https
