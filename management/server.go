@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -39,6 +40,8 @@ func (s *server) Chain(r fiber.Router) {
 	// campaigns
 	r.Get("/campaigns", s.ListCampaigns)
 	r.Post("/campaign/create", s.CreateCampaign)
+	r.Patch("/campaign/update", s.UpdateCampaign)
+	r.Delete("/campaign/remove/:key", s.RemoveCampaign)
 }
 
 // @Summary Register
@@ -359,9 +362,21 @@ func (s *server) CreateCampaign(c *fiber.Ctx) error {
 
 	organization := payload.Hits.Hits[0].Source
 	organization.Campaigns = append(organization.Campaigns, Campaign{
-		Key:     uuid.New(),
-		Name:    request.Name,
-		Created: time.Now(),
+		Key:          uuid.New(),
+		Name:         request.Name,
+		Start:        request.Start,
+		Finish:       request.Finish,
+		Active:       request.Active,
+		Wanted:       request.Wanted,
+		Accept:       request.Accept,
+		Reject:       request.Reject,
+		Education:    request.Education,
+		Experience:   request.Experience,
+		Certificates: request.Certificates,
+		Courses:      request.Courses,
+		Skills:       request.Skills,
+		Languages:    request.Languages,
+		Created:      time.Now(),
 	})
 
 	data, err := json.Marshal(organization)
@@ -382,4 +397,217 @@ func (s *server) CreateCampaign(c *fiber.Ctx) error {
 	defer response.Body.Close()
 
 	return c.SendString("campaign created")
+}
+
+// @Summary UpdateCampaign
+// @Schemes
+// @Description UpdateCampaign
+// @Tags campaigns
+// @Accept application/json
+// @Param payload body UpdateCampaignRequest true "body"
+// @Success 200 {object} string
+// @Router /campaign/update [patch]
+func (s *server) UpdateCampaign(c *fiber.Ctx) error {
+	var request UpdateCampaignRequest
+	if err := json.Unmarshal(c.Body(), &request); err != nil {
+		return err
+	}
+
+	// TODO: refactor later
+	cookie := c.Cookies(s.configuration.Cookie)
+	parser := func(token *jwt.Token) (interface{}, error) { return []byte(s.configuration.Secret), nil }
+
+	token, err := jwt.Parse(cookie, parser)
+	if err != nil {
+		return fiber.NewError(http.StatusUnauthorized, "unauthorized")
+	}
+
+	claims := token.Claims.(jwt.MapClaims)
+	company := claims["Company"].(string)
+
+	query := strings.NewReader(fmt.Sprintf(`{ "query": { "match_phrase": { "name": "%s" } } }`, company))
+	response, err := s.storage.Search(s.storage.Search.WithIndex(s.configuration.Index), s.storage.Search.WithBody(query))
+	if err != nil {
+		return fiber.NewError(http.StatusServiceUnavailable, err.Error())
+	}
+	defer response.Body.Close()
+
+	var payload struct {
+		Hits struct {
+			Hits []struct {
+				Source Organization `json:"_source"`
+			} `json:"hits"`
+		} `json:"hits"`
+	}
+
+	if err = json.NewDecoder(response.Body).Decode(&payload); err != nil {
+		return err
+	}
+
+	var campaign Campaign
+	index := -1
+	for i, item := range payload.Hits.Hits[0].Source.Campaigns {
+		if item.Key == request.Key {
+			campaign = item
+			index = i
+			break
+		}
+	}
+
+	if index == -1 {
+		return errors.New("Campaign with this id not found")
+	}
+
+	organization := payload.Hits.Hits[0].Source
+
+	if request.Name != nil {
+		campaign.Name = *request.Name
+	}
+
+	if request.Start != nil {
+		campaign.Start = *request.Start
+	}
+
+	if request.Finish != nil {
+		campaign.Finish = *request.Finish
+	}
+
+	if request.Active != nil {
+		campaign.Active = *request.Active
+	}
+
+	if request.Wanted != nil {
+		campaign.Wanted = *request.Wanted
+	}
+
+	if request.Accept != nil {
+		campaign.Accept = *request.Accept
+	}
+
+	if request.Reject != nil {
+		campaign.Reject = *request.Reject
+	}
+
+	if request.Education != nil {
+		campaign.Education = *request.Education
+	}
+
+	if request.Experience != nil {
+		campaign.Experience = *request.Experience
+	}
+
+	if request.Certificates != nil {
+		campaign.Certificates = *request.Certificates
+	}
+
+	if request.Courses != nil {
+		campaign.Courses = *request.Courses
+	}
+
+	if request.Skills != nil {
+		campaign.Skills = *request.Skills
+	}
+
+	if request.Languages != nil {
+		campaign.Languages = *request.Languages
+	}
+
+	campaign.Updated = time.Now()
+	organization.Campaigns[index] = campaign
+
+	data, err := json.Marshal(organization)
+	if err != nil {
+		return err
+	}
+
+	create := esapi.IndexRequest{
+		Index:      s.configuration.Index,
+		DocumentID: payload.Hits.Hits[0].Source.Key.String(),
+		Body:       bytes.NewReader(data),
+	}
+
+	response, err = create.Do(context.Background(), s.storage)
+	if err != nil {
+		return fiber.NewError(http.StatusServiceUnavailable, err.Error())
+	}
+	defer response.Body.Close()
+
+	return c.SendString("campaign updated")
+}
+
+// @Summary RemoveCampaign
+// @Schemes
+// @Description RemoveCampaign
+// @Tags campaigns
+// @Accept application/json
+// @Param key path string true "key"
+// @Success 200 {object} string
+// @Router /campaign/remove/{key} [delete]
+func (s *server) RemoveCampaign(c *fiber.Ctx) error {
+	key := c.Params("key")
+
+	// TODO: refactor later
+	cookie := c.Cookies(s.configuration.Cookie)
+	parser := func(token *jwt.Token) (interface{}, error) { return []byte(s.configuration.Secret), nil }
+
+	token, err := jwt.Parse(cookie, parser)
+	if err != nil {
+		return fiber.NewError(http.StatusUnauthorized, "unauthorized")
+	}
+
+	claims := token.Claims.(jwt.MapClaims)
+	company := claims["Company"].(string)
+
+	query := strings.NewReader(fmt.Sprintf(`{ "query": { "match_phrase": { "name": "%s" } } }`, company))
+	response, err := s.storage.Search(s.storage.Search.WithIndex(s.configuration.Index), s.storage.Search.WithBody(query))
+	if err != nil {
+		return fiber.NewError(http.StatusServiceUnavailable, err.Error())
+	}
+	defer response.Body.Close()
+
+	var payload struct {
+		Hits struct {
+			Hits []struct {
+				Source Organization `json:"_source"`
+			} `json:"hits"`
+		} `json:"hits"`
+	}
+
+	if err = json.NewDecoder(response.Body).Decode(&payload); err != nil {
+		return err
+	}
+
+	index := -1
+	for i, item := range payload.Hits.Hits[0].Source.Campaigns {
+		if item.Key.String() == key {
+			index = i
+			break
+		}
+	}
+
+	if index == -1 {
+		return errors.New("Campaign with this id not found")
+	}
+
+	organization := payload.Hits.Hits[0].Source
+	organization.Campaigns = append(organization.Campaigns[:index], organization.Campaigns[index+1:]...)
+
+	data, err := json.Marshal(organization)
+	if err != nil {
+		return err
+	}
+
+	create := esapi.IndexRequest{
+		Index:      s.configuration.Index,
+		DocumentID: payload.Hits.Hits[0].Source.Key.String(),
+		Body:       bytes.NewReader(data),
+	}
+
+	response, err = create.Do(context.Background(), s.storage)
+	if err != nil {
+		return fiber.NewError(http.StatusServiceUnavailable, err.Error())
+	}
+	defer response.Body.Close()
+
+	return c.SendString("campaign removed")
 }

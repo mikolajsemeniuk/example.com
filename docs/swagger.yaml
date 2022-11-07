@@ -14,8 +14,6 @@ definitions:
         items:
           type: string
         type: array
-      created:
-        type: string
       education:
         items:
           type: string
@@ -25,8 +23,6 @@ definitions:
           type: string
         type: array
       finish:
-        type: string
-      key:
         type: string
       languages:
         items:
@@ -65,6 +61,49 @@ definitions:
       password:
         example: P@ssw0rd
         type: string
+    type: object
+  management.UpdateCampaignRequest:
+    properties:
+      accept:
+        type: number
+      active:
+        type: boolean
+      certificates:
+        items:
+          type: string
+        type: array
+      courses:
+        items:
+          type: string
+        type: array
+      education:
+        items:
+          type: string
+        type: array
+      experience:
+        items:
+          type: string
+        type: array
+      finish:
+        type: string
+      key:
+        type: string
+      languages:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      reject:
+        type: number
+      skills:
+        items:
+          type: string
+        type: array
+      start:
+        type: string
+      wanted:
+        type: integer
     type: object
 info:
   contact: {}
@@ -172,6 +211,45 @@ paths:
           schema:
             type: string
       summary: CreateCampaign
+      tags:
+      - campaigns
+  /campaign/remove/{key}:
+    delete:
+      consumes:
+      - application/json
+      description: RemoveCampaign
+      parameters:
+      - description: key
+        in: path
+        name: key
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: RemoveCampaign
+      tags:
+      - campaigns
+  /campaign/update:
+    patch:
+      consumes:
+      - application/json
+      description: UpdateCampaign
+      parameters:
+      - description: body
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/management.UpdateCampaignRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: UpdateCampaign
       tags:
       - campaigns
   /campaigns:

@@ -173,6 +173,66 @@ const docTemplate = `{
                 }
             }
         },
+        "/campaign/remove/{key}": {
+            "delete": {
+                "description": "RemoveCampaign",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "campaigns"
+                ],
+                "summary": "RemoveCampaign",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/campaign/update": {
+            "patch": {
+                "description": "UpdateCampaign",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "campaigns"
+                ],
+                "summary": "UpdateCampaign",
+                "parameters": [
+                    {
+                        "description": "body",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/management.UpdateCampaignRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/campaigns": {
             "get": {
                 "description": "ListCampaigns",
@@ -216,9 +276,6 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
-                "created": {
-                    "type": "string"
-                },
                 "education": {
                     "type": "array",
                     "items": {
@@ -232,9 +289,6 @@ const docTemplate = `{
                     }
                 },
                 "finish": {
-                    "type": "string"
-                },
-                "key": {
                     "type": "string"
                 },
                 "languages": {
@@ -290,6 +344,71 @@ const docTemplate = `{
                 "password": {
                     "type": "string",
                     "example": "P@ssw0rd"
+                }
+            }
+        },
+        "management.UpdateCampaignRequest": {
+            "type": "object",
+            "properties": {
+                "accept": {
+                    "type": "number"
+                },
+                "active": {
+                    "type": "boolean"
+                },
+                "certificates": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "courses": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "education": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "experience": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "finish": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "languages": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "reject": {
+                    "type": "number"
+                },
+                "skills": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "start": {
+                    "type": "string"
+                },
+                "wanted": {
+                    "type": "integer"
                 }
             }
         }

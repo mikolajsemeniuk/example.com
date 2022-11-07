@@ -75,7 +75,6 @@ func (c *Company) UnmarshalJSON(data []byte) error {
 // Refactor later
 
 type CreateCampaignRequest struct {
-	Key          uuid.UUID `json:"key"`
 	Name         string    `json:"name"`
 	Start        time.Time `json:"start"`
 	Finish       time.Time `json:"finish"`
@@ -89,5 +88,21 @@ type CreateCampaignRequest struct {
 	Courses      []string  `json:"courses"`
 	Skills       []string  `json:"skills"`
 	Languages    []string  `json:"languages"`
-	Created      time.Time `json:"created"`
+}
+
+type UpdateCampaignRequest struct {
+	Key          uuid.UUID  `json:"key"`
+	Name         *string    `json:"name"`
+	Start        *time.Time `json:"start"`
+	Finish       *time.Time `json:"finish"`
+	Active       *bool      `json:"active"`
+	Wanted       *int       `json:"wanted"`
+	Accept       *float32   `json:"accept"`
+	Reject       *float32   `json:"reject"`
+	Education    *[]string  `json:"education"`
+	Experience   *[]string  `json:"experience"`
+	Certificates *[]string  `json:"certificates"`
+	Courses      *[]string  `json:"courses"`
+	Skills       *[]string  `json:"skills"`
+	Languages    *[]string  `json:"languages"`
 }
